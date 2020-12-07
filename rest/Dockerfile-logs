@@ -1,0 +1,11 @@
+##
+## You provide this
+##
+
+FROM python:3.9-alpine
+
+RUN  pip3 install --upgrade pika
+
+WORKDIR  /logs
+COPY     logs.py /logs
+CMD      ["python3", "logs.py"]

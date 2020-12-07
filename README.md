@@ -1,2 +1,3 @@
-# ScalableOCR
-Scalable OCR application using Flask, Docker, Kubernetes, Redis, RabbitMQ, and Tesseract on Google Cloud
+# CSCI 5253 Final project: Scalable OCR
+
+Need to still write this
