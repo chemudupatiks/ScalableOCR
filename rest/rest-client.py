@@ -12,7 +12,7 @@ import hashlib
 
 def login(addr, username, password, debug=False):
     headers = {'content-type': 'application/json'}
-    pwd = hashlib.sha256().update(password).hexdigest()
+    pwd = hashlib.sha256(password.encode()).hexdigest()
     url = addr + '/auth/login'
     data = jsonpickle.encode({
         'username': username, 
@@ -21,11 +21,11 @@ def login(addr, username, password, debug=False):
     response = requests.post(url, data=data, headers=headers)
     if debug: 
         print("Response is", response)
-        print(json.loads(response.data))
+        print(json.loads(response.text))
 
 def register(addr, username, password, debug=False):
     headers = {'content-type': 'application/json'}
-    pwd = hashlib.sha256().update(password).hexdigest()
+    pwd = hashlib.sha256(password.encode()).hexdigest()
     url = addr + '/auth/register'
     data = jsonpickle.encode({
         'username': username, 
@@ -34,7 +34,7 @@ def register(addr, username, password, debug=False):
     response = requests.post(url, data=data, headers=headers)
     if debug: 
         print("Response is", response)
-        print(json.loads(response.data))
+        print(json.loads(response.text))
 
 def logout(addr, username, authkey, debug=False):
     headers = {'content-type': 'application/json'}
@@ -46,13 +46,13 @@ def logout(addr, username, authkey, debug=False):
     response = requests.post(url, data=data, headers=headers)
     if debug: 
         print("Response is", response)
-        print(json.loads(response.data))
+        print(json.loads(response.text))
 
 def addfile(addr, username, authkey, filepath, debug=False):
     headers = {'content-type': 'application/json'}
     basepath, filename = os.path.split(filepath)
     url = addr + '/api/addfile/' + filename
-    file_data = open(filename, 'rb').read()
+    file_data = open(filepath, 'rb').read()
     data = jsonpickle.encode({
         'username': username, 
         'authkey' : authkey,
@@ -61,7 +61,7 @@ def addfile(addr, username, authkey, filepath, debug=False):
     response = requests.post(url, data=data, headers=headers)
     if debug: 
         print("Response is", response)
-        print(json.loads(response.data))
+        print(json.loads(response.text))
 
 
 def getall(addr, username, authkey, debug=False):
@@ -74,13 +74,13 @@ def getall(addr, username, authkey, debug=False):
     response = requests.get(url, data=data, headers=headers)
     if debug: 
         print("Response is", response)
-        print(json.loads(response.data))
+        print(json.loads(response.text))
 
 
 host = sys.argv[1]
 cmd = sys.argv[2]
 
-addr = 'http://{}'.format(host)
+addr = 'http://{}:5000'.format(host)
 
 if cmd == 'login':
     username = sys.argv[3]

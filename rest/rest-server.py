@@ -13,8 +13,8 @@ from google.cloud import storage
 ##
 ## Configure test vs. production
 ##
-redisHost = os.getenv("REDIS_HOST") or "172.18.103.67"
-rabbitMQHost = os.getenv("RABBITMQ_HOST") or "172.18.103.67"
+redisHost = os.getenv("REDIS_HOST") or "localhost" # "172.18.103.67"
+rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost" # "172.18.103.67"
 hostname = os.uname()[1]
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost,redisHost))
 app = Flask(__name__)
@@ -48,16 +48,20 @@ redisFilehashToText = redis.Redis(host = redisHost, db = 5)
 
 @app.route('/auth/login', methods = ['POST'])
 def login():
-    data = request.data 
+    data = jsonpickle.decode(request.data)
     username = data['username']
     password = data['password']
     authkey = ""
     message = "Login failed"
-    if redisUsernamePwd.exists("username"):
+    # print(password, file=sys.stderr)
+    # print(redisUsernamePwd.get(username), file=sys.stderr)
+    if redisUsernamePwd.exists(username):
         if redisAuthKey.get(username):
             message = "Already logged in!"
-            authkey = redisAuthKey.get(username)
-        elif redisUsernamePwd.get(username) ==  password:
+            authkey = redisAuthKey.get(username).decode()
+            # print(authkey, file=sys.stderr)
+            # print(authkey.decode(), file=sys.stderr)
+        elif redisUsernamePwd.get(username).decode() ==  password:
             message = "Logged in successfully"
             authkey = secrets.token_hex(16)
             redisAuthKey.set(username, authkey)
@@ -74,12 +78,16 @@ def login():
 
 @app.route('/auth/register', methods=['POST'])
 def register():
-    data = request.data 
+    data = jsonpickle.decode(request.data) 
     username = data['username']
     password = data['password']
     authkey = ""
+    # print(username, file=sys.stderr)
+    # print(password, file=sys.stderr)    
+    # print(redisUsernamePwd.keys(), file=sys.stderr)
+    # print(redisAuthKey.keys(), file=sys.stderr)
     message = "Username already exists!"
-    if not redisUsernamePwd.exists("username"):
+    if not redisUsernamePwd.exists(username):
         redisUsernamePwd.set(username, password)
         message = "Registered successfully!"
         redisAuthKey.set(username, authkey) 
@@ -92,15 +100,15 @@ def register():
 
 @app.route('/auth/logout', methods=['POST'])
 def logout():
-    data = request.data
+    data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
     message = "Unauthorized logout"
-    if redisAuthKey.get(username) == authkey:
+    if redisAuthKey.get(username).decode() == authkey:
         if authkey == "":
             message = "Already logged out"
         else:
-            redisAuthKey.set(username) == ""
+            redisAuthKey.set(username, "")
             message = "Logged out successfully"
 
     response = {
@@ -114,17 +122,19 @@ def add_file(filename):
     '''
     - if the authkey matches what is stored the redisAuthkey key-values store, send the file to the worker
     '''
-    data = request.data 
+    data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
     file_upload = data['file']
+    print(type(file_upload), file = sys.stderr)
+
+    url = ""
+    file_hash = ""
 
     if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
         message = "Cannot add file. Filename should end with ('.jpg', '.jpeg', '.png', '.pdf')"
-        url = ""
-        file_hash = ""
     else: 
-        if redisAuthKey.get(username) == authkey:
+        if redisAuthKey.get(username).decode() == authkey:
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(host=rabbitMQHost))
             worker_channel = connection.channel()
@@ -132,10 +142,10 @@ def add_file(filename):
 
             worker_channel.exchange_declare(exchange='toWorker', exchange_type='direct')
             logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
-            file_hash = hashlib.sha256().update(file_upload).hexdigest()
+            file_hash = hashlib.sha256(file_upload).hexdigest()
 
             # save the file in a bucket and send the url
-            with open(filename, 'w') as fp: 
+            with open(filename, 'wb') as fp: 
                 fp.write(file_upload)
             
             bucket_name = "user-ocr-files"
@@ -143,14 +153,18 @@ def add_file(filename):
             try:
                 bucket = client.get_bucket(bucket_name)
             except google.cloud.exceptions.NotFound:
-                print("Sorry, that bucket does not exist!")
+                print("Sorry, that bucket does not exist! Creating one now..", file=sys.stderr)
                 bucket = storage.Bucket(client, name=bucket_name, user_project="scalableocr")
                 bucket.location = "us"
                 bucket.storage_class = "COLDLINE"
                 bucket = client.create_bucket(bucket)
 
+            print(bucket, file=sys.stderr)
             blob = storage.Blob(file_hash, bucket)
-            blob.upload_from_file(filename)
+            print("hello", file=sys.stderr)
+            blob.upload_from_filename(filename)
+            print("hello", file=sys.stderr)
+
 
             url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash) 
             os.remove(filename)
@@ -184,7 +198,7 @@ def add_file(filename):
         
 @app.route('/api/getall', methods=['GET'])
 def getall():
-    data = request.data 
+    data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
 
@@ -193,17 +207,17 @@ def getall():
     file_hash = ""
     bucket_name = "user-ocr-files"
     response = []
-    if redisAuthKey.get(username) == authkey:
+    if redisAuthKey.get(username).decode() == authkey:
         file_hashes = redisUsernameToFilehashSet.smembers(username)
         if file_hashes: 
             for file_hash in file_hashes: 
-                username_filehash = username + file_hash
-                filename = redisUsernamefilehashToFilename.get(username_filehash)
-                text = redisFilehashToText.get(file_hash)
+                username_filehash = username + file_hash.decode()
+                filename = redisUsernamefilehashToFilename.get(username_filehash).decode()
+                text = redisFilehashToText.get(file_hash).decode()
                 url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash)
                 single_respose = {
                     'filename': filename, 
-                    'filehash': file_hash, 
+                    'filehash': file_hash.decode(), 
                     'url'     : url, 
                     'text'    : text
                 }

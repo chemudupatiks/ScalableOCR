@@ -9,13 +9,14 @@ import redis
 import pytesseract 
 from PIL import Image
 from pdf2image import convert_from_path
+import sys
 
 
 hostname = platform.node()
 INFO = "{}.rest.info".format(hostname)
 DEBUG = "{}.rest.debug".format(hostname)
-redisHost = os.getenv("REDIS_HOST") or "172.18.103.67"
-rabbitMQHost = os.getenv("RABBITMQ_HOST") or "172.18.103.67"
+redisHost = os.getenv("REDIS_HOST") or "localhost" # "172.18.103.67"
+rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost" # "172.18.103.67"
 
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost,redisHost))
 
@@ -43,9 +44,13 @@ redisFilehashToText = redis.Redis(host = redisHost, db = 5)
 def callback(ch, method, properties, body):
     message = pickle.loads(body)
     filename = message['filename']
+    # print(filename, file=sys.stderr)
     username = message['username']
+    # print(username, file=sys.stderr)
     file_hash = message['hash']
+    # print(file_hash, file=sys.stderr)
     file_data = pickle.loads(message['file'])
+    # print(type(file_data), file=sys.stderr)
 
     logs_channel.basic_publish(
             exchange='logs', routing_key=INFO,\
@@ -54,7 +59,7 @@ def callback(ch, method, properties, body):
     redisUsernamefilehashToFilename.set(username+file_hash, filename)
     redisUsernameToFilehashSet.sadd(username, file_hash)
 
-    with open(filename, 'w') as fp: 
+    with open(filename, 'wb') as fp: 
             fp.write(file_data)
 
     if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
@@ -71,6 +76,7 @@ def callback(ch, method, properties, body):
             os.remove(page_filename)
     
     redisFilehashToText.set(file_hash, text)
+    os.remove(filename)
 
 channel.basic_consume(
     queue=queue_name, on_message_callback=callback, auto_ack=True)

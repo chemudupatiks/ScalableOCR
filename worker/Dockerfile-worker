@@ -1,6 +1,6 @@
-FROM dirkcgrunwald/facerec
+FROM jitesoft/tesseract-ocr
 
-RUN pip3 install --upgrade pika redis jsonpickle requests flask
+RUN pip3 install --upgrade pika redis requests flask pytesseract pillow pdf2image
 
 WORKDIR  /srv 
 COPY     worker-server.py /srv
