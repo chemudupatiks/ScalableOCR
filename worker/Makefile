@@ -3,15 +3,15 @@
 ##
 
 build: 
-	docker build -f Dockerfile-worker -t lab7-worker:1.0 .
+	docker build -f Dockerfile-worker -t scalable-ocr-worker:1.0 .
 
 push:
 	# docker login --username kchemudu
-	docker tag lab7-worker:1.0 kchemudu/lab7-worker:1.0
-	docker push kchemudu/lab7-worker:1.0
+	docker tag scalable-ocr-worker:1.0 kchemudu/scalable-ocr-worker:1.0
+	docker push kchemudu/scalable-ocr-worker:1.0
 
 run: 
-	docker container run --rm -it --name worker lab7-worker:1.0 
+	docker container run --rm -it --name worker scalable-ocr-worker:1.0 
 
 stop: 
 	docker container stop worker 

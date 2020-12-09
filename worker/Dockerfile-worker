@@ -1,4 +1,8 @@
-FROM jitesoft/tesseract-ocr
+FROM python:3
+
+USER root 
+RUN apt-get update && apt-get install -y \
+    python3-pip tesseract-ocr poppler-utils
 
 RUN pip3 install --upgrade pika redis requests flask pytesseract pillow pdf2image
 

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: worker-server
-        image: kchemudu/lab7-worker:1.0
+        image: kchemudu/scalable-ocr-worker:1.0
         resources:
           requests:
             cpu: 100m

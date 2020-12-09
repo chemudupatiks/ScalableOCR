@@ -1,22 +1,22 @@
 #
 # Worker server
 #
+import os, sys
 import pickle
 import platform
-import os
 import pika
 import redis
 import pytesseract 
 from PIL import Image
 from pdf2image import convert_from_path
-import sys
+
 
 
 hostname = platform.node()
 INFO = "{}.rest.info".format(hostname)
 DEBUG = "{}.rest.debug".format(hostname)
-redisHost = os.getenv("REDIS_HOST") or "localhost" # "172.18.103.67"
-rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost" # "172.18.103.67"
+redisHost = os.getenv("REDIS_HOST") or  "172.18.103.67" # "localhost"
+rabbitMQHost = os.getenv("RABBITMQ_HOST") or "172.18.103.67" # "localhost" 
 
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost,redisHost))
 

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: logger
-        image: kchemudu/lab7-logs:1.0
+        image: kchemudu/scalable-ocr-logs:1.0
         resources:
           requests:
             cpu: 100m

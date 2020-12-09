@@ -13,8 +13,8 @@ from google.cloud import storage
 ##
 ## Configure test vs. production
 ##
-redisHost = os.getenv("REDIS_HOST") or "localhost" # "172.18.103.67"
-rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost" # "172.18.103.67"
+redisHost = os.getenv("REDIS_HOST") or  "172.18.103.67" # "localhost" 
+rabbitMQHost = os.getenv("RABBITMQ_HOST") or  "172.18.103.67" # "localhost"
 hostname = os.uname()[1]
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost,redisHost))
 app = Flask(__name__)

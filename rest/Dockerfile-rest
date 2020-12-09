@@ -2,11 +2,11 @@
 ## You provide this
 ##
 
-FROM python:3.9-alpine
+FROM python:3
 
-RUN  pip3 install --upgrade pika redis jsonpickle requests flask
+RUN  pip3 install --upgrade pika redis jsonpickle requests flask google-cloud-storage
 
 WORKDIR  /srv 
-COPY     rest-server.py rest-client.py /srv
-ENV      FLASK_APP=rest-server.py
-CMD      ["python3", "rest-server.py"]
+COPY     ["rest-server.py", "rest-client.py", "credentials.json", "/srv"]
+ENV      FLASK_APP=rest-server.py GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+CMD      ["python", "rest-server.py"]

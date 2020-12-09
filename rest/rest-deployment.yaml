@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: rest-server
-        image: kchemudu/lab7-rest:1.0
+        image: kchemudu/scalable-ocr-rest:1.0
         resources:
           requests:
             cpu: 100m

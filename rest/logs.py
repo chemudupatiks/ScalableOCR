@@ -5,7 +5,7 @@ import pika
 ##
 ## Configure test vs. production
 ##
-rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost" # "172.18.103.67"
+rabbitMQHost = os.getenv("RABBITMQ_HOST") or  "172.18.103.67" #"localhost" 
 print("Using host", rabbitMQHost)
 
 rabbitMQ = pika.BlockingConnection(

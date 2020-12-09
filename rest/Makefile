@@ -3,21 +3,21 @@
 ##
 
 build: 
-	docker build -f Dockerfile-rest -t lab7-rest:1.0 .
-	docker build -f Dockerfile-logs -t lab7-logs:1.0 .
+	docker build -f Dockerfile-rest -t scalable-ocr-rest:1.0 .
+	docker build -f Dockerfile-logs -t scalable-ocr-logs:1.0 .
 
 push:
 	# docker login --username kchemudu
-	docker tag lab7-rest:1.0 kchemudu/lab7-rest:1.0
-	docker tag lab7-logs:1.0 kchemudu/lab7-logs:1.0
-	docker push kchemudu/lab7-rest:1.0
-	docker push kchemudu/lab7-logs:1.0
+	docker tag scalable-ocr-rest:1.0 kchemudu/scalable-ocr-rest:1.0
+	docker tag scalable-ocr-logs:1.0 kchemudu/scalable-ocr-logs:1.0
+	docker push kchemudu/scalable-ocr-rest:1.0
+	docker push kchemudu/scalable-ocr-logs:1.0
 
 run_rest: 
-	docker container run --rm -it --name rest lab7-rest:1.0 
+	docker container run --rm -it --name rest scalable-ocr-rest:1.0 
 
 run_logs:
-	docker container run --rm -it --name logs lab7-logs:1.0 
+	docker container run --rm -it --name logs scalable-ocr-logs:1.0 
 
 stop: 
 	docker container stop rest 

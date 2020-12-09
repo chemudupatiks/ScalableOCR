@@ -80,7 +80,7 @@ def getall(addr, username, authkey, debug=False):
 host = sys.argv[1]
 cmd = sys.argv[2]
 
-addr = 'http://{}:5000'.format(host)
+addr = 'http://{}'.format(host)
 
 if cmd == 'login':
     username = sys.argv[3]
