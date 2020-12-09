@@ -11,8 +11,8 @@ spec:
   rules:
   - http:
       paths:
-      - path: /
-        pathType: Prefix
+      - path: /*
+        # pathType: Prefix
         backend:
           serviceName: rest-server
           servicePort: 80

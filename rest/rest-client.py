@@ -72,6 +72,7 @@ def getall(addr, username, authkey, debug=False):
         'authkey' : authkey
     })
     response = requests.get(url, data=data, headers=headers)
+    print(response.text, file= sys.stderr)
     if debug: 
         print("Response is", response)
         print(json.loads(response.text))

@@ -95,6 +95,7 @@ def register():
     response = {
         'message': message
     }
+    print(response, file = sys.stderr)
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
@@ -198,6 +199,7 @@ def add_file(filename):
         
 @app.route('/api/getall', methods=['GET'])
 def getall():
+    print("hello")
     data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
