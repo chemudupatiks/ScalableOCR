@@ -229,6 +229,10 @@ def getall():
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
+@app.route('/', methods=['GET'])
+def hello():
+    return '<h1> Scalable OCR Server</h1><p> Use a valid endpoint </p>'
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     print(e)
