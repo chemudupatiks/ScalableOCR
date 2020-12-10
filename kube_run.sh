@@ -12,5 +12,5 @@ kubectl apply -f rest/logs-deployment.yaml
 
 kubectl apply -f worker/worker-deployment.yaml
 
-kubectl autoscale deployment rest/rest-deployment --cpu-percent=50 --min=1 --max=10
+kubectl autoscale deployment rest-servers --cpu-percent=50 --min=1 --max=10
 
