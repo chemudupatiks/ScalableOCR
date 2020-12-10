@@ -48,6 +48,10 @@ redisFilehashToText = redis.Redis(host = redisHost, db = 5)
 
 @app.route('/auth/login', methods = ['POST'])
 def login():
+    connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitMQHost))
+    logs_channel = connection.channel()
+    logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
     data = jsonpickle.decode(request.data)
     username = data['username']
     password = data['password']
@@ -72,12 +76,19 @@ def login():
         'message': message,
         'authkey': authkey
     }
+    logs_channel.basic_publish(
+                exchange='logs', routing_key=INFO, body="[auth/login] username: {}, authkey: {}".format(username,authkey))
+    connection.close()
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
 
 @app.route('/auth/register', methods=['POST'])
 def register():
+    connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitMQHost))
+    logs_channel = connection.channel()
+    logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
     data = jsonpickle.decode(request.data) 
     username = data['username']
     password = data['password']
@@ -95,12 +106,19 @@ def register():
     response = {
         'message': message
     }
-    print(response, file = sys.stderr)
+    # print(response, file = sys.stderr)
+    logs_channel.basic_publish(
+                exchange='logs', routing_key=INFO, body="[auth/register] username: {}, message: {}".format(username,message))
+    connection.close()
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
 @app.route('/auth/logout', methods=['POST'])
 def logout():
+    connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitMQHost))
+    logs_channel = connection.channel()
+    logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
     data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
@@ -115,6 +133,9 @@ def logout():
     response = {
         'message': message
     }
+    logs_channel.basic_publish(
+                exchange='logs', routing_key=INFO, body="[auth/logout] username: {}, message: {}".format(username, message))
+    connection.close()
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
@@ -123,83 +144,91 @@ def add_file(filename):
     '''
     - if the authkey matches what is stored the redisAuthkey key-values store, send the file to the worker
     '''
+
     data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
     file_upload = data['file']
-    print(type(file_upload), file = sys.stderr)
-
+    # print(type(file_upload), file = sys.stderr)
     url = ""
     file_hash = ""
-
-    if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
-        message = "Cannot add file. Filename should end with ('.jpg', '.jpeg', '.png', '.pdf')"
-    else: 
-        if redisAuthKey.get(username).decode() == authkey:
-            connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=rabbitMQHost))
-            worker_channel = connection.channel()
-            logs_channel = connection.channel()
-
-            worker_channel.exchange_declare(exchange='toWorker', exchange_type='direct')
-            logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
-            file_hash = hashlib.sha256(file_upload).hexdigest()
-
-            # save the file in a bucket and send the url
-            with open(filename, 'wb') as fp: 
-                fp.write(file_upload)
-            
-            bucket_name = "user-ocr-files"
-            client = storage.Client()
-            try:
-                bucket = client.get_bucket(bucket_name)
-            except google.cloud.exceptions.NotFound:
-                print("Sorry, that bucket does not exist! Creating one now..", file=sys.stderr)
-                bucket = storage.Bucket(client, name=bucket_name, user_project="scalableocr")
-                bucket.location = "us"
-                bucket.storage_class = "COLDLINE"
-                bucket = client.create_bucket(bucket)
-
-            print(bucket, file=sys.stderr)
-            blob = storage.Blob(file_hash, bucket)
-            print("hello", file=sys.stderr)
-            blob.upload_from_filename(filename)
-            print("hello", file=sys.stderr)
-
-
-            url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash) 
-            os.remove(filename)
-
-            routing_key = 'addEntry'
-            worker_message = {
-                'filename': filename,
-                'username': username,
-                'hash'    : file_hash, 
-                'file'    : pickle.dumps(file_upload, 0)
-            }
-            worker_channel.basic_publish(
-                exchange='toWorker', routing_key=routing_key, body=pickle.dumps(worker_message, 0))
-            print("INFO [api/addfile] hash: {}".format(file_hash)) 
-
-            logs_channel.basic_publish(
-                exchange='logs', routing_key=INFO, body="[api/addfile] hash: {}".format(file_hash))
-
-            connection.close()
-            message = "Added file successfully!"
+    try:
+        if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
+            message = "Cannot add file. Filename should end with ('.jpg', '.jpeg', '.png', '.pdf')"
         else: 
-            message = "Unauthorized access"
-    response = {
-        'message': message,
-        'url': url, 
-        'file_hash': file_hash
-    }
-    response_pickled = jsonpickle.encode(response)
-    return Response(response=response_pickled, status=200, mimetype="application/json")
+            if redisAuthKey.get(username).decode() == authkey:
+                connection = pika.BlockingConnection(
+                    pika.ConnectionParameters(host=rabbitMQHost))
+                worker_channel = connection.channel()
+                logs_channel = connection.channel()
+
+                worker_channel.exchange_declare(exchange='toWorker', exchange_type='direct')
+                logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
+                file_hash = hashlib.sha256(file_upload).hexdigest()
+
+                # save the file in a bucket and send the url
+                with open(filename, 'wb') as fp: 
+                    fp.write(file_upload)
+                
+                bucket_name = "user-ocr-files"
+                client = storage.Client()
+                try:
+                    bucket = client.get_bucket(bucket_name)
+                except google.cloud.exceptions.NotFound:
+                    print("Sorry, that bucket does not exist! Creating one now..", file=sys.stderr)
+                    bucket = storage.Bucket(client, name=bucket_name, user_project="scalableocr")
+                    bucket.location = "us"
+                    bucket.storage_class = "COLDLINE"
+                    bucket = client.create_bucket(bucket)
+
+                # print(bucket, file=sys.stderr)
+                blob = storage.Blob(file_hash, bucket)
+                blob.upload_from_filename(filename)
+
+                url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash) 
+                os.remove(filename)
+
+                routing_key = 'addEntry'
+                worker_message = {
+                    'filename': filename,
+                    'username': username,
+                    'hash'    : file_hash, 
+                    'file'    : pickle.dumps(file_upload, 0)
+                }
+                worker_channel.basic_publish(
+                    exchange='toWorker', routing_key=routing_key, body=pickle.dumps(worker_message, 0))
+                print("INFO [api/addfile] hash: {}".format(file_hash)) 
+
+                logs_channel.basic_publish(
+                    exchange='logs', routing_key=INFO, body="[api/addfile] hash: {}".format(file_hash))
+
+                connection.close()
+                message = "Added file successfully!"
+            else: 
+                message = "Unauthorized access"
+        response = {
+            'message': message,
+            'url': url, 
+            'file_hash': file_hash
+        }
+        response_pickled = jsonpickle.encode(response)
+        return Response(response=response_pickled, status=200, mimetype="application/json")
+    except Exception as e: 
+        connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitMQHost))
+        logs_channel = connection.channel()
+        logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
+        logs_channel.basic_publish(
+                exchange='logs', routing_key=INFO, body="[api/addfile] username: {}, message: {}".format(username, str(e)))
+        connection.close()
 
         
 @app.route('/api/getall', methods=['GET'])
 def getall():
-    print("hello")
+    connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitMQHost))
+    logs_channel = connection.channel()
+    logs_channel.exchange_declare(exchange ='logs', exchange_type = 'topic')
     data = jsonpickle.decode(request.data)
     username = data['username']
     authkey = data['authkey']
@@ -228,6 +257,9 @@ def getall():
         response = {
             'message': message
         }
+    logs_channel.basic_publish(
+                exchange='logs', routing_key=INFO, body="[api/getall] username: {}, authkey: {}".format(username, authkey))
+    connection.close()
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
