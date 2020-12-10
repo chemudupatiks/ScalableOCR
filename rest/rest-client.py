@@ -86,7 +86,8 @@ addr = 'http://{}'.format(host)
 if cmd == 'login':
     username = sys.argv[3]
     password = sys.argv[4]
-    reps = int(sys.argv[5])
+    # reps = int(sys.argv[5])
+    reps = 1
     start = time.perf_counter()
     for x in range(reps):
         login(addr, username, password, True)
@@ -95,7 +96,8 @@ if cmd == 'login':
 elif cmd == 'register':
     username = sys.argv[3]
     password = sys.argv[4]
-    reps = int(sys.argv[5])
+    # reps = int(sys.argv[5])
+    reps = 1
     start = time.perf_counter()
     for x in range(reps):
         register(addr, username, password, True)
@@ -104,7 +106,8 @@ elif cmd == 'register':
 elif cmd == 'logout':
     username = sys.argv[3]
     authkey = sys.argv[4]
-    reps = int(sys.argv[5])
+    # reps = int(sys.argv[5])
+    reps = 1
     start = time.perf_counter()
     for x in range(reps):
         logout(addr, username, authkey, True)
@@ -114,7 +117,8 @@ elif cmd == 'addfile':
     filepath = sys.argv[3]
     username = sys.argv[4]
     authkey = sys.argv[5]
-    reps = int(sys.argv[6])
+    # reps = int(sys.argv[6])
+    reps = 1
     start = time.perf_counter()
     for x in range(reps):
         addfile(addr, username, authkey, filepath, True)
@@ -123,7 +127,8 @@ elif cmd == 'addfile':
 elif cmd == 'getall':
     username = sys.argv[3]
     authkey = sys.argv[4]
-    reps = int(sys.argv[5])
+    # reps = int(sys.argv[5])
+    reps = 1
     start = time.perf_counter()
     for x in range(reps):
         getall(addr, username, authkey, True)

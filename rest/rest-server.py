@@ -245,7 +245,7 @@ def getall():
                 username_filehash = username + file_hash.decode()
                 filename = redisUsernamefilehashToFilename.get(username_filehash).decode()
                 text = redisFilehashToText.get(file_hash).decode()
-                url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash)
+                url = "https://storage.cloud.google.com/{}/{}".format(bucket_name, file_hash.decode())
                 single_respose = {
                     'filename': filename, 
                     'filehash': file_hash.decode(), 
